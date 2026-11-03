@@ -1,0 +1,12 @@
+cff-version: 1.2.0
+title: "Incident Investigator"
+message: "If this project helps your work, please cite the repository."
+type: software
+authors:
+  - family-names: Elbostany
+    given-names: Karem
+    affiliation: Independent
+repository-code: "https://github.com/egyhaty/incident-investigator"
+license: MIT
+version: 0.1.0
+abstract: "Evidence-first incident investigation with bounded tools, runbook retrieval, and local LLM evaluation."
