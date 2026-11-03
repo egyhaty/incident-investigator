@@ -83,7 +83,7 @@ class NoRedirect(urllib.request.HTTPRedirectHandler):
 class OllamaProvider:
     name = "ollama"
 
-    def __init__(self, model, base_url="http://127.0.0.1:11434", timeout=90):
+    def __init__(self, model, base_url="http://127.0.0.1:11434", timeout=35):
         parsed = urllib.parse.urlsplit(base_url)
         if (parsed.scheme != "http" or parsed.hostname not in {"127.0.0.1", "localhost", "::1"}
                 or parsed.username or parsed.password or parsed.query or parsed.fragment

@@ -189,7 +189,18 @@ class Handler(BaseHTTPRequestHandler):
                 provider = OllamaProvider(self.server.model, self.server.ollama_url)
             else:
                 provider = OpenAICompatibleProvider(os.environ.get("INVESTIGATOR_OPENAI_MODEL", "openai/gpt-4o-mini"), os.environ.get("INVESTIGATOR_OPENAI_BASE_URL", "https://openrouter.ai/api/v1"), os.environ["INVESTIGATOR_OPENAI_API_KEY"])
-            result = investigate(scenario_id, provider)
+            try:
+                result = investigate(scenario_id, provider)
+            except RuntimeError as exc:
+                # Keep the operator experience useful when a local model is cold,
+                # overloaded, or unavailable: return the bounded reference report
+                # instead of an empty error page, while making the fallback explicit.
+                if mode != "ollama":
+                    raise
+                result = investigate(scenario_id, DemoProvider())
+                result["provider_fallback"] = "demo"
+                result["provider_warning"] = str(exc)
+            result["provider_requested"] = mode
             result["target_node"] = body.get("node_name") or None
             self.server.metrics.record(result)
             self.send(200, result)
