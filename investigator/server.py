@@ -8,7 +8,7 @@ from urllib.parse import urlsplit
 
 from .agent import investigate
 from .connectors import ConnectorConfigurationError, KubernetesReadOnlyConfig, KubernetesReadOnlyConnector
-from .providers import DemoProvider, OllamaProvider
+from .providers import DemoProvider, OllamaProvider, OpenAICompatibleProvider
 from .tools import scenarios
 
 WEB = Path(__file__).parent / "web"
@@ -130,6 +130,7 @@ class Handler(BaseHTTPRequestHandler):
                 self.send(503, {"available": False, "error": str(exc)})
         elif path == "/api/config":
             self.send(200, {"data_mode": "synthetic", "ollama_enabled": bool(self.server.model),
+                            "openrouter_enabled": bool(os.environ.get("INVESTIGATOR_OPENAI_API_KEY")),
                             "model": self.server.model, "version": "0.1.0"})
         elif path == "/metrics":
             self.send(200, self.server.metrics.render(), "text/plain; version=0.0.4")
@@ -169,10 +170,12 @@ class Handler(BaseHTTPRequestHandler):
             if not isinstance(scenario_id, str) or scenario_id not in {s["id"] for s in scenarios()}:
                 raise ValueError("Unknown scenario")
             mode = body.get("provider", "demo")
-            if not isinstance(mode, str) or mode not in {"demo", "ollama"}:
+            if not isinstance(mode, str) or mode not in {"demo", "ollama", "openrouter"}:
                 raise ValueError("Unknown provider")
             if mode == "ollama" and not self.server.model:
                 raise ValueError("Start the server with --model to enable local inference")
+            if mode == "openrouter" and not os.environ.get("INVESTIGATOR_OPENAI_API_KEY"):
+                raise ValueError("OpenAI-compatible provider is not configured")
         except (ValueError, UnicodeError) as exc:
             self.send(400, {"error": str(exc)})
             return
@@ -180,7 +183,12 @@ class Handler(BaseHTTPRequestHandler):
             self.send(429, {"error": "Two investigations are already running; try again shortly"})
             return
         try:
-            provider = DemoProvider() if mode == "demo" else OllamaProvider(self.server.model, self.server.ollama_url)
+            if mode == "demo":
+                provider = DemoProvider()
+            elif mode == "ollama":
+                provider = OllamaProvider(self.server.model, self.server.ollama_url)
+            else:
+                provider = OpenAICompatibleProvider(os.environ.get("INVESTIGATOR_OPENAI_MODEL", "openai/gpt-4o-mini"), os.environ.get("INVESTIGATOR_OPENAI_BASE_URL", "https://openrouter.ai/api/v1"), os.environ["INVESTIGATOR_OPENAI_API_KEY"])
             result = investigate(scenario_id, provider)
             result["target_node"] = body.get("node_name") or None
             self.server.metrics.record(result)

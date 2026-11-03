@@ -122,3 +122,40 @@ class OllamaProvider:
             raise ValueError("Invalid model response message")
         # Preserve tool-call metadata but do not store or expose model reasoning.
         return {key: message[key] for key in ["role", "content", "tool_calls"] if key in message}
+
+
+class OpenAICompatibleProvider:
+    """Optional OpenAI-compatible provider (for example OpenRouter).
+
+    Disabled unless explicitly configured through environment variables. The
+    provider receives the same bounded tools and prompts as the local model.
+    """
+
+    name = "openai-compatible"
+
+    def __init__(self, model, base_url, api_key, timeout=35):
+        self.model, self.base_url, self.api_key, self.timeout = model, base_url.rstrip("/"), api_key, timeout
+        self.usage = {"input_tokens": 0, "output_tokens": 0}
+
+    def respond(self, messages, tools):
+        request = urllib.request.Request(
+            self.base_url + "/chat/completions",
+            data=json.dumps({"model": self.model, "messages": messages, "tools": tools, "temperature": 0, "stream": False}).encode(),
+            headers={"Content-Type": "application/json", "Authorization": f"Bearer {self.api_key}"},
+            method="POST",
+        )
+        try:
+            with urllib.request.urlopen(request, timeout=self.timeout) as response:
+                body = json.load(response)
+        except (urllib.error.URLError, TimeoutError) as exc:
+            raise RuntimeError("OpenAI-compatible provider is unavailable") from exc
+        choices = body.get("choices")
+        if not isinstance(choices, list) or not choices or not isinstance(choices[0].get("message"), dict):
+            raise ValueError("Invalid OpenAI-compatible response")
+        usage = body.get("usage", {})
+        self.usage["input_tokens"] += usage.get("prompt_tokens", 0) if type(usage.get("prompt_tokens", 0)) is int else 0
+        self.usage["output_tokens"] += usage.get("completion_tokens", 0) if type(usage.get("completion_tokens", 0)) is int else 0
+        message = choices[0]["message"]
+        if message.get("role") != "assistant":
+            raise ValueError("Invalid model response message")
+        return {key: message[key] for key in ["role", "content", "tool_calls"] if key in message}
