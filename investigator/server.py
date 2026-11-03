@@ -163,7 +163,7 @@ class Handler(BaseHTTPRequestHandler):
             if not 1 <= size <= 4096:
                 raise ValueError("Request body must contain 1..4096 bytes")
             body = json.loads(self.rfile.read(size))
-            if not isinstance(body, dict) or set(body) - {"scenario_id", "provider"}:
+            if not isinstance(body, dict) or set(body) - {"scenario_id", "provider", "node_name"}:
                 raise ValueError("Unexpected request fields")
             scenario_id = body.get("scenario_id")
             if not isinstance(scenario_id, str) or scenario_id not in {s["id"] for s in scenarios()}:
@@ -182,6 +182,7 @@ class Handler(BaseHTTPRequestHandler):
         try:
             provider = DemoProvider() if mode == "demo" else OllamaProvider(self.server.model, self.server.ollama_url)
             result = investigate(scenario_id, provider)
+            result["target_node"] = body.get("node_name") or None
             self.server.metrics.record(result)
             self.send(200, result)
         except (ValueError, RuntimeError) as exc:

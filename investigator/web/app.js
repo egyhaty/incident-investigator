@@ -4,7 +4,7 @@ async function loadLiveStatus(){try{const r=await fetch("/api/live/summary");con
 const labels = {duplicate_ip: "Duplicate IP address", storage_capacity: "Replica scheduling capacity", container_oom: "Container memory limit", insufficient_evidence: "Insufficient evidence"};
 loadLiveStatus();
 const toolLabels = {inspect_node: "Read node health", read_events: "Read incident events", inspect_network: "Inspect address ownership", inspect_storage: "Inspect storage capacity", inspect_workload: "Inspect workload health", search_runbooks: "Retrieve runbook guidance"};
-let cases = [], selected = null, current = null, busy = false;
+let cases = [], selected = null, selectedNode = null, current = null, busy = false;
 function node(tag, text, className) { const e = document.createElement(tag); if (text !== undefined) e.textContent = text; if (className) e.className = className; return e; }
 function clearResult() { current = null; $("results").hidden = true; $("empty-state").hidden = false; $("error").hidden = true; $("run-state").textContent = "READY"; $("run-state").className = "state-badge"; }
 function selectCase(item) {
@@ -36,7 +36,7 @@ $("investigate").addEventListener("click", async () => {
   $("investigate").textContent="Investigating…"; $("run-state").textContent="RUNNING";
   for(const b of $("cases").children) b.disabled=true;
   try {
-    const response=await fetch("/api/investigate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({scenario_id:selected.id,provider:$("provider").value})});
+    const response=await fetch("/api/investigate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({scenario_id:selected.id,provider:$("provider").value,node_name:selectedNode?.name||""})});
     const result=await response.json(); if(!response.ok) throw new Error(result.error || "Investigation failed");render(result);
   } catch(error) {$("error").textContent=error.message;$("error").hidden=false;$("run-state").textContent="NOT COMPLETED";}
   finally {busy=false;$("investigate").disabled=false;$("provider").disabled=false;$("investigate").replaceChildren(document.createTextNode("Run investigation "),node("span","↗"));for(const b of $("cases").children)b.disabled=false;}
@@ -51,4 +51,5 @@ async function init(){
   try{const [r,c]=await Promise.all([fetch("/api/scenarios"),fetch("/api/config")]);if(!r.ok||!c.ok)throw new Error("Could not load the lab");cases=await r.json();const config=await c.json();$("cases").replaceChildren(...cases.map((item,i)=>{const b=node("button",undefined,"case-button");b.type="button";b.dataset.case=item.id;b.setAttribute("aria-pressed","false");b.append(node("span",`CASE ${String(i+1).padStart(2,"0")}`,"case-number"),node("span",item.title,"case-title"),node("span",item.resources.namespace+" / "+item.resources.node,"case-sub"));b.addEventListener("click",()=>selectCase(item));return b;}));if(config.ollama_enabled){const o=$("provider").querySelector('[value="ollama"]');o.disabled=false;o.textContent=`Local LLM · ${config.model}`;}selectCase(cases[0]);}
   catch(error){$("cases").replaceChildren(node("p","Lab unavailable. Refresh after starting the server."));$("error").textContent=error.message;$("error").hidden=false;}
 }
-init();
+async function loadNodeSelector(){try{const r=await fetch("/api/live/nodes");if(!r.ok)throw new Error("Live nodes unavailable");const nodes=await r.json();selectedNode=nodes[0]||null;const select=$("node-select");select.replaceChildren(...nodes.map(item=>{const o=node("option",`${item.name} · ${item.ready?"READY":"CHECK"}`);o.value=item.name;return o;}));select.disabled=!selectedNode;select.addEventListener("change",()=>{selectedNode=nodes.find(item=>item.name===select.value)||null;});}catch(error){$("node-select").replaceChildren(node("option","Live inventory unavailable"));}}
+init(); loadNodeSelector();
