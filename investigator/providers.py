@@ -83,7 +83,7 @@ class NoRedirect(urllib.request.HTTPRedirectHandler):
 class OllamaProvider:
     name = "ollama"
 
-    def __init__(self, model, base_url="http://127.0.0.1:11434", timeout=25):
+    def __init__(self, model, base_url="http://127.0.0.1:11434", timeout=90):
         parsed = urllib.parse.urlsplit(base_url)
         if (parsed.scheme != "http" or parsed.hostname not in {"127.0.0.1", "localhost", "::1"}
                 or parsed.username or parsed.password or parsed.query or parsed.fragment
@@ -110,8 +110,11 @@ class OllamaProvider:
             if len(raw) > 512_000:
                 raise ValueError("Model response exceeded size limit")
             body = json.loads(raw)
+        except urllib.error.HTTPError as exc:
+            raise RuntimeError(f"Local Ollama returned HTTP {exc.code}") from exc
         except (urllib.error.URLError, TimeoutError, OSError) as exc:
-            raise RuntimeError("Local Ollama request failed; check the service and installed model") from exc
+            reason = getattr(exc, "reason", None) or str(exc)
+            raise RuntimeError(f"Local Ollama request failed: {reason}") from exc
         for source, destination in [("prompt_eval_count", "input_tokens"), ("eval_count", "output_tokens")]:
             count = body.get(source, 0)
             if type(count) is not int or count < 0:
