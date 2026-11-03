@@ -1,6 +1,8 @@
 "use strict";
 const $ = id => document.getElementById(id);
+async function loadLiveStatus(){try{const r=await fetch("/api/live/summary");const d=await r.json();if(!r.ok)throw new Error(d.error||"offline");$("live-state").textContent="CONNECTED · READ-ONLY";$("live-nodes").textContent=d.observations.nodes;$("live-pods").textContent=d.observations.pods;$("live-events").textContent=d.observations.events;}catch(e){$("live-state").textContent="SYNTHETIC MODE · LIVE LINK UNAVAILABLE";}}
 const labels = {duplicate_ip: "Duplicate IP address", storage_capacity: "Replica scheduling capacity", container_oom: "Container memory limit", insufficient_evidence: "Insufficient evidence"};
+loadLiveStatus();
 const toolLabels = {inspect_node: "Read node health", read_events: "Read incident events", inspect_network: "Inspect address ownership", inspect_storage: "Inspect storage capacity", inspect_workload: "Inspect workload health", search_runbooks: "Retrieve runbook guidance"};
 let cases = [], selected = null, current = null, busy = false;
 function node(tag, text, className) { const e = document.createElement(tag); if (text !== undefined) e.textContent = text; if (className) e.className = className; return e; }

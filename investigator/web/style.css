@@ -5,4 +5,5 @@
 .portfolio-strip h2{max-width:520px;margin:0}
 .portfolio-strip>p{max-width:560px;margin:0;color:var(--muted);font-size:1.05rem;line-height:1.75}
 .portfolio-strip a{color:var(--accent);font-weight:700;text-decoration-color:#a8cbb9;text-underline-offset:4px}
+.live-strip{display:grid;grid-template-columns:1.2fr 1fr auto;gap:24px;align-items:center;margin:0 0 34px;padding:18px 22px;border:1px solid #cfe0d5;background:#edf6f0;border-radius:14px}.live-strip strong{display:block;margin-top:5px;color:var(--accent);font-family:var(--mono);font-size:12px;letter-spacing:.03em}.live-counts{display:flex;gap:18px;color:var(--muted);font-family:var(--mono);font-size:11px}.live-counts b{color:var(--ink);font-size:18px;margin-right:4px}.live-strip small{color:var(--muted);text-align:right}@media(max-width:760px){.live-strip{grid-template-columns:1fr}.live-strip small{text-align:left}}
 @media (max-width:760px){.portfolio-strip{grid-template-columns:1fr;gap:20px;padding:48px 0}}
