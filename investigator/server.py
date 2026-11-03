@@ -116,6 +116,18 @@ class Handler(BaseHTTPRequestHandler):
                 })
             except (ConnectorConfigurationError, OSError, RuntimeError, ValueError) as exc:
                 self.send(503, {"data_mode": "live-read-only", "available": False, "error": str(exc)})
+        elif path == "/api/live/nodes":
+            try:
+                config = KubernetesReadOnlyConfig.from_environment()
+                items = KubernetesReadOnlyConnector(config).observe("nodes")["items"]
+                self.send(200, [{
+                    "name": item.get("metadata", {}).get("name", "unknown"),
+                    "ready": next((condition.get("status") == "True" for condition in item.get("status", {}).get("conditions", []) if condition.get("type") == "Ready"), False),
+                    "roles": sorted((item.get("metadata", {}).get("labels", {}).get("node-role.kubernetes.io/worker") and ["worker"] or []) + (["control-plane"] if "node-role.kubernetes.io/control-plane" in item.get("metadata", {}).get("labels", {}) else [])),
+                    "kubelet": item.get("status", {}).get("nodeInfo", {}).get("kubeletVersion", "unknown"),
+                } for item in items])
+            except (ConnectorConfigurationError, OSError, RuntimeError, ValueError) as exc:
+                self.send(503, {"available": False, "error": str(exc)})
         elif path == "/api/config":
             self.send(200, {"data_mode": "synthetic", "ollama_enabled": bool(self.server.model),
                             "model": self.server.model, "version": "0.1.0"})
