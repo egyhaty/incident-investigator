@@ -15,6 +15,7 @@
 ## Demonstrated on the dedicated VM
 
 - Real local Ollama inference using `qwen3:4b-instruct-2507-q4_K_M`.
+- If a local model call exceeds its bounded timeout, the API returns an explicit bounded reference report with `provider_fallback=demo`; the operator still gets evidence, citations, and safe next steps instead of an empty failure.
 - HTTPS deployment at `investigator.murabba.net` behind Nginx.
 - Basic authentication at the edge; Ollama and the application remain loopback-only.
 - Eight-case evaluation with bounded validation retries: 5 / 8 accepted reports.
