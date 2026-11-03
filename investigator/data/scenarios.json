@@ -1,0 +1,54 @@
+[
+  {
+    "id": "duplicate-ip",
+    "title": "The control plane keeps disconnecting",
+    "alert": "KubeClientErrors and NodeReadinessFlapping on control-b. Investigate intermittent API failures.",
+    "resources": {"node": "control-b", "address": "192.0.2.22", "namespace": "platform"},
+    "observations": {
+      "node": {"ready": true, "cpu_percent": 43, "memory_percent": 39, "disk_percent": 35},
+      "events": ["etcd peer connection reset by peer", "API request timeout", "Node readiness changed twice in 20 minutes"],
+      "network": {"address": "192.0.2.22", "expected_mac": "02:00:00:00:00:22", "arp_responders": ["02:00:00:00:00:22", "02:00:00:00:09:03"], "observed_loss_percent": 0},
+      "workload": {"ready_replicas": 3, "desired_replicas": 3, "restarts": 0, "last_termination": null},
+      "storage": {"usage_percent": 35, "schedulable": true, "attached_volumes_healthy": true}
+    }
+  },
+  {
+    "id": "storage-pressure",
+    "title": "New replicas cannot be scheduled",
+    "alert": "VolumeReplicaSchedulingFailed on worker-a. A volume is degraded and replicas are not rebuilding.",
+    "resources": {"node": "worker-a", "address": "192.0.2.31", "namespace": "storage"},
+    "observations": {
+      "node": {"ready": true, "cpu_percent": 28, "memory_percent": 48, "disk_percent": 27},
+      "events": ["Replica scheduling failed: provisioned capacity exceeds scheduling limit", "A volume has fewer healthy replicas than requested"],
+      "network": {"address": "192.0.2.31", "expected_mac": "02:00:00:00:00:31", "arp_responders": ["02:00:00:00:00:31"], "observed_loss_percent": 0},
+      "workload": {"ready_replicas": 2, "desired_replicas": 2, "restarts": 0, "last_termination": null},
+      "storage": {"usage_percent": 27, "provisioned_gib": 74, "scheduling_limit_gib": 70, "schedulable": false, "attached_volumes_healthy": false}
+    }
+  },
+  {
+    "id": "memory-crash",
+    "title": "The API pod keeps restarting",
+    "alert": "KubePodCrashLooping for checkout-api in shop. Investigate repeated restarts.",
+    "resources": {"node": "worker-b", "address": "192.0.2.32", "namespace": "shop"},
+    "observations": {
+      "node": {"ready": true, "cpu_percent": 32, "memory_percent": 57, "disk_percent": 41},
+      "events": ["Back-off restarting failed container checkout-api", "Container terminated with exit code 137"],
+      "network": {"address": "192.0.2.32", "expected_mac": "02:00:00:00:00:32", "arp_responders": ["02:00:00:00:00:32"], "observed_loss_percent": 0},
+      "workload": {"ready_replicas": 1, "desired_replicas": 2, "restarts": 12, "last_termination": "OOMKilled", "memory_limit_mib": 256, "memory_peak_mib": 255},
+      "storage": {"usage_percent": 41, "schedulable": true, "attached_volumes_healthy": true}
+    }
+  },
+  {
+    "id": "insufficient-evidence",
+    "title": "An alert without enough evidence",
+    "alert": "ServiceLatencyHigh for search-api in shop. The cause is not yet known.",
+    "resources": {"node": "worker-b", "address": "192.0.2.32", "namespace": "shop"},
+    "observations": {
+      "node": {"ready": true, "cpu_percent": 24, "memory_percent": 44, "disk_percent": 40},
+      "events": ["Upstream latency increased; request traces unavailable"],
+      "network": {"address": "192.0.2.32", "expected_mac": "02:00:00:00:00:32", "arp_responders": ["02:00:00:00:00:32"], "observed_loss_percent": 0},
+      "workload": {"ready_replicas": 2, "desired_replicas": 2, "restarts": 0, "last_termination": null},
+      "storage": {"usage_percent": 40, "schedulable": true, "attached_volumes_healthy": true}
+    }
+  }
+]
