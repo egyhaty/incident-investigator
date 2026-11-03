@@ -7,6 +7,7 @@ from pathlib import Path
 from urllib.parse import urlsplit
 
 from .agent import investigate
+from .connectors import ConnectorConfigurationError, KubernetesReadOnlyConfig, KubernetesReadOnlyConnector
 from .providers import DemoProvider, OllamaProvider
 from .tools import scenarios
 
@@ -103,6 +104,18 @@ class Handler(BaseHTTPRequestHandler):
             return
         if path == "/api/scenarios":
             self.send(200, [{k: item[k] for k in ["id", "title", "alert", "resources"]} for item in scenarios()])
+        elif path == "/api/live/summary":
+            try:
+                config = KubernetesReadOnlyConfig.from_environment()
+                connector = KubernetesReadOnlyConnector(config)
+                self.send(200, {
+                    "data_mode": "live-read-only",
+                    "api_host": urlsplit(config.api_url).hostname,
+                    "observations": {name: len(connector.observe(name)["items"]) for name in ("nodes", "pods", "events")},
+                    "mutations_executed": 0,
+                })
+            except (ConnectorConfigurationError, OSError, RuntimeError, ValueError) as exc:
+                self.send(503, {"data_mode": "live-read-only", "available": False, "error": str(exc)})
         elif path == "/api/config":
             self.send(200, {"data_mode": "synthetic", "ollama_enabled": bool(self.server.model),
                             "model": self.server.model, "version": "0.1.0"})

@@ -31,6 +31,9 @@ class KubernetesReadOnlyConfig:
     def from_environment(cls) -> "KubernetesReadOnlyConfig":
         api_url = os.environ.get("INVESTIGATOR_K8S_API_URL", "").rstrip("/")
         token = os.environ.get("INVESTIGATOR_K8S_TOKEN", "")
+        token_file = os.environ.get("INVESTIGATOR_K8S_TOKEN_FILE", "")
+        if not token and token_file:
+            token = open(token_file, encoding="utf-8").read().strip()
         if not api_url or not token:
             raise ConnectorConfigurationError(
                 "Live Kubernetes evidence is disabled; configure INVESTIGATOR_K8S_API_URL and INVESTIGATOR_K8S_TOKEN"
