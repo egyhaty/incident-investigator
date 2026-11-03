@@ -1,0 +1,70 @@
+# Lab deployment only. Access through kubectl port-forward; no public ingress.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: incident-investigator
+  labels:
+    pod-security.kubernetes.io/enforce: restricted
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: investigator
+  namespace: incident-investigator
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: investigator}
+  template:
+    metadata:
+      labels: {app: investigator}
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: investigator
+          # Build and load this image into your lab; pin a reviewed digest for releases.
+          image: incident-investigator:0.1.0
+          imagePullPolicy: IfNotPresent
+          ports: [{name: http, containerPort: 8080}]
+          resources:
+            requests: {cpu: 50m, memory: 64Mi}
+            limits: {cpu: 500m, memory: 128Mi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+          readinessProbe:
+            httpGet: {path: /readyz, port: http}
+            initialDelaySeconds: 2
+          livenessProbe:
+            httpGet: {path: /healthz, port: http}
+            initialDelaySeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: investigator
+  namespace: incident-investigator
+spec:
+  selector: {app: investigator}
+  ports: [{name: http, port: 8080, targetPort: http}]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: investigator-lab-boundary
+  namespace: incident-investigator
+spec:
+  podSelector:
+    matchLabels: {app: investigator}
+  policyTypes: [Ingress, Egress]
+  ingress:
+    - from:
+        - podSelector: {}
+      ports: [{protocol: TCP, port: 8080}]
+  egress: []

@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "incident-investigator"
+version = "0.1.0"
+description = "Evidence-first incident investigation with bounded tools and runbook retrieval"
+requires-python = ">=3.11"
+license = "MIT"
+readme = "README.md"
+dependencies = []
+
+[project.scripts]
+investigator = "investigator.__main__:main"
+
+[tool.setuptools.package-data]
+investigator = ["data/*.json", "runbooks/*.md", "web/*"]
+
+[tool.setuptools.packages.find]
+include = ["investigator*"]

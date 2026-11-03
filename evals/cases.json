@@ -1,0 +1,6 @@
+[
+  {"scenario_id":"duplicate-ip","expected_diagnosis":"duplicate_ip","expected_source":"network.md","critical_evidence":"evidence:network"},
+  {"scenario_id":"storage-pressure","expected_diagnosis":"storage_capacity","expected_source":"storage.md","critical_evidence":"evidence:storage"},
+  {"scenario_id":"memory-crash","expected_diagnosis":"container_oom","expected_source":"memory.md","critical_evidence":"evidence:workload"},
+  {"scenario_id":"insufficient-evidence","expected_diagnosis":"insufficient_evidence","expected_source":"unknown.md","critical_evidence":"evidence:events"}
+]
