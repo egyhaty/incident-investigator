@@ -12,6 +12,10 @@ The four cases are development examples, not held-out data or a statistically me
 
 Current checks include expected diagnosis, presence of a relevant runbook source, required critical evidence, and no executed mutations. Sentence-level grounding, quality of proposed next steps, retrieval recall at scale, and adversarial robustness are not comprehensively evaluated.
 
+## Next evaluation expansion
+
+The next corpus will separate ordinary incidents, healthy cases, insufficient-evidence cases, conflicting signals, and distractor-heavy counterexamples. Each case will record the expected diagnosis, required observations, relevant source IDs, forbidden claims, and safe next steps. Local Ollama and an optional OpenAI-compatible provider will run the same corpus; results will be compared on diagnosis accuracy, evidence grounding, abstention quality, latency, and token usage.
+
 Abstention is a first-class expected result. Exit code 137 without OOMKilled is tested as insufficient evidence. Multiple replies from the same MAC are not treated as two distinct address owners.
 
 Tool-call attempts outside the allowlist are blocked even if the model or an injected document requests them. This demonstrates a narrow capability boundary; it does not prove complete prompt-injection resistance.

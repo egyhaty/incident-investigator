@@ -18,10 +18,15 @@
 - HTTPS deployment at `investigator.murabba.net` behind Nginx.
 - Basic authentication at the edge; Ollama and the application remain loopback-only.
 - Eight-case evaluation with bounded validation retries: 5 / 8 accepted reports.
+- Live Kubernetes read-only access verified against the Karm DevOps cluster: 3 nodes, 106 pods, and live events observed.
+- Dashboard node targeting is explicit and the selected node is recorded in the investigation response.
+- Optional OpenAI-compatible provider boundary is implemented and disabled unless explicitly configured.
 
 ## Not yet demonstrated
 
 - A public repository release of the dedicated-VM evaluation artifacts.
+- Prometheus alert ingestion and Slack notifications.
+- Approval-gated remediation playbooks; no autonomous mutation is enabled.
 - Container build or Kubernetes deployment until separately validated.
 - Running GitHub Actions until the repository is published and the workflow executes.
 - Production authentication, durable traces, a hardened production HTTP server, or public hosting.

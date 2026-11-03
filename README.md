@@ -6,6 +6,14 @@ An alert is a starting point, not a diagnosis. This project connects a bounded i
 
 Built by Karem Elbostany as the operations-intelligence companion to the [Karm DevOps Platform](https://github.com/egyhaty/karm-devops).
 
+## Live deployment
+
+The dashboard is deployed on a dedicated VM at [investigator.murabba.net](https://investigator.murabba.net/). It currently has a verified, read-only connection to the Karm DevOps Kubernetes cluster and exposes live node, pod, and event counts without granting the model mutation, shell, or `exec` access.
+
+![Incident Investigator dashboard preview](docs/preview.png)
+
+The current UI makes the investigation scope explicit: choose a live target node, choose an incident, select the inference provider, and run a bounded investigation. The result includes the selected target, evidence, retrieved runbook citations, trace, limitations, and validation outcome.
+
 ## Portfolio context
 
 This repository is the second layer of a two-project platform story:
@@ -44,6 +52,7 @@ The repository runs directly from its root. Installing it with `python3 -m pip i
 |---|---|---|---|
 | Reference demo | Transparent deterministic policy | Python only | Tool orchestration, retrieval, report validation, UI and observability |
 | Local LLM | An Ollama model chooses tools and generates a report | Running Ollama and an installed tool-capable model | A real bounded tool-calling agent and retrieval-augmented generation |
+| OpenAI-compatible (optional) | An explicitly configured endpoint such as OpenRouter | API key, base URL and model supplied outside Git | Provider comparison without changing the safety/evidence boundary |
 
 **A successful demo evaluation is not an AI accuracy benchmark.** The demo is labeled everywhere and does not silently become an LLM. Provider integration is tested with a local protocol stub; that test is not real inference.
 
@@ -56,7 +65,7 @@ python3 -m investigator investigate --provider ollama --model YOUR_INSTALLED_MOD
 python3 scripts/evaluate.py --provider ollama --model YOUR_INSTALLED_MODEL --output artifacts/model-evaluation.json
 ```
 
-No model is downloaded automatically, no cloud API is called, and no paid provider credentials are required. Ollama endpoints are restricted to loopback. A missing model or unavailable service returns an explicit failure; it never falls back to the demo while claiming inference.
+No model is downloaded automatically, no cloud API is called by default, and no provider credentials are committed. Ollama endpoints are restricted to loopback. A missing model or unavailable service returns an explicit failure; it never falls back to the demo while claiming inference.
 
 ## The architecture
 
@@ -70,6 +79,8 @@ flowchart LR
     Retrieval --> Docs[Versioned Markdown runbooks]
     Loop --> Gate[Evidence and citation validation]
     Gate --> Report[Report, proposed actions and trace]
+    Alert[Live Kubernetes / Prometheus alert] -. read-only .-> Tools
+    Report --> Notify[Future Slack notification and approval workflow]
 ```
 
 The model sees an alert and resource identifiers, not an expected diagnosis or scenario answer. It chooses tool calls, receives observations, and can adjust its next step. The runtime enforces the tool allowlist, argument schemas, duplicate-call checks, round/tool/token budgets, and a deadline. The final diagnosis must satisfy an evidence predicate, and all cited evidence and chunk IDs must have been retrieved in that investigation.
